@@ -26,6 +26,8 @@ bool reset = false;
 int count = 0;
 int save = 0;
 int motorSpeed = 100;
+long runTime = 0;
+long playTime = 0;
 const int percentMilis = 100;
 int finishedMilis = percentMilis * 100;
 String percentStr = String("0%");
@@ -40,6 +42,7 @@ void setup()
   pinMode(DIR_B, OUTPUT);
   pinMode(PWM, OUTPUT);
   
+  runTime = 0;
 
    // set the number of columns and the number of lines of lcd
   lcd.begin (16, 2);
@@ -75,10 +78,11 @@ void loop()
       lcd.print("|>");
       lcd.setCursor(0,1);
       lcd.print(percentStr);
+      playTime = millis();
       running = true;
       wasRunning = true; 
     }
-    if(count == finishedMilis){
+    if(count == 100){
       //drive forward at full speed by pulling DIR_A High
       //and DIR_B low, while writing a full 255 to PWM to 
       //control speed
@@ -96,12 +100,13 @@ void loop()
       setup();
     }
     
-    long countdowntime_seconds = countdown_time - (millis() / 1000);
+    runTime += millis() - playTime;
+    long countdowntime_seconds = countdown_time - (runTime / 1000);
     //lcd.setCursor(0,4);
     //lcd.print(totaltime - countdowntime_seconds);
     
     if(countdowntime_seconds%36 ==0 ){
-        
+
         save++;
           if(save%2==0){
             count++;
