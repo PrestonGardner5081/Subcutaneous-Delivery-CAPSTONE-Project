@@ -141,7 +141,7 @@ void loop()
       }
     lcd.print(countdown_sec);
   }
-  delay(500);
+  
     
        
     
