@@ -25,11 +25,12 @@ bool wasRunning = false;
 bool reset = false;
 int count = 0;
 int save = 0;
-int motorSpeed = 100;
-long runTime = 0;
-long playTime = 0;
-const int percentMilis = 100;
-int finishedMilis = percentMilis * 100;
+double motorSpeed = 25;
+//double motorSpeed = 2.78;
+//double motorSpeed = 1.1; 
+unsigned long pausedTime = 0;
+unsigned long paused = 0;
+unsigned long elapsedTime = 0;
 String percentStr = String("0%");
 
 long hour = 0, minute = 59, second = 59;//second 
@@ -41,8 +42,6 @@ void setup()
   pinMode(DIR_A, OUTPUT);
   pinMode(DIR_B, OUTPUT);
   pinMode(PWM, OUTPUT);
-  
-  runTime = 0;
 
    // set the number of columns and the number of lines of lcd
   lcd.begin (16, 2);
@@ -65,7 +64,8 @@ void setup()
 
 void loop()
 {
-     
+  elapsedTime = millis() - pausedTime;
+  long countdowntime_seconds = countdown_time - (elapsedTime / 1000);
  if(running){
     if(!wasRunning){
       //drive forward at full speed by pulling DIR_A High
@@ -77,12 +77,12 @@ void loop()
       lcd.clear();
       lcd.print("|>");
       lcd.setCursor(0,1);
-      lcd.print(percentStr);
-      playTime = millis();
+      // lcd.print(percentStr);
+      pausedTime = millis() - paused;
       running = true;
       wasRunning = true; 
     }
-    if(count == 100){
+    if(countdowntime_seconds == 0){
       //drive forward at full speed by pulling DIR_A High
       //and DIR_B low, while writing a full 255 to PWM to 
       //control speed
@@ -100,27 +100,25 @@ void loop()
       setup();
     }
     
-    runTime += millis() - playTime;
-    long countdowntime_seconds = countdown_time - (runTime / 1000);
     //lcd.setCursor(0,4);
     //lcd.print(totaltime - countdowntime_seconds);
     
-    if(countdowntime_seconds%36 ==0 ){
+  //   if(countdowntime_seconds%36 == 0){
 
-        save++;
-          if(save%2==0){
-            count++;
-        } 
-      }
+  //       save++;
+  //         if(save%2==0){
+  //           count++;
+  //       } 
+  //     }
  
       
-   if(count != 0){
-      percentStr = String(count) + String("\%");
-      lcd.clear();
-      lcd.print("|>");
-      lcd.setCursor(0,1);
-      lcd.print(percentStr);
-    }
+  //  if(count != 0){
+  //     percentStr = String(count) + String("\%");
+  //     lcd.clear();
+  //     lcd.print("|>");
+  //     lcd.setCursor(0,1);
+  //     lcd.print(percentStr);
+  //   }
   if (countdowntime_seconds >= 0) {
     long countdown_hour = countdowntime_seconds / 3600;
     long countdown_minute = ((countdowntime_seconds / 60)%60);
@@ -153,6 +151,7 @@ void loop()
     digitalWrite(DIR_A, LOW);
     digitalWrite(DIR_B, LOW);
     analogWrite(PWM, motorSpeed);
+    paused = millis();
     lcd.clear();
     lcd.print("|| Press button");
     lcd.setCursor(0,1); 
