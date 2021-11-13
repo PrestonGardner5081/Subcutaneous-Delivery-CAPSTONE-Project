@@ -25,7 +25,7 @@ bool wasRunning = false;
 bool reset = false;
 int count = 0;
 int save = 0;
-double motorSpeed = 40;
+double motorSpeed = 50;
 //double motorSpeed = 2.78;
 //double motorSpeed = 1.1; 
 unsigned long pausedTime = 0;
@@ -63,7 +63,7 @@ void setup()
   lcd.setCursor(0,1);//write the rest on new line
   lcd.print("begin.");
   Serial.begin(9600);//initialize serial output for debugging FIXME
-  attachInterrupt(digitalPinToInterrupt(2), toggleDelivery, FALLING); //attach button interupt to pin D2
+  attachInterrupt(digitalPinToInterrupt(13), toggleDelivery, FALLING); //attach button interupt to pin D2
 }
 
 void loop()
@@ -95,7 +95,7 @@ void loop()
       digitalWrite(DIR_A, LOW);
       digitalWrite(DIR_B, LOW);
       analogWrite(PWM, motorSpeed);
-      attachInterrupt(digitalPinToInterrupt(2), toggleReset, FALLING); //attach button interupt to pin D2
+      attachInterrupt(digitalPinToInterrupt(13), toggleReset, FALLING); //attach button interupt to pin D2
       lcd.clear();
       lcd.print("Complete, press");
       lcd.setCursor(0,1);
@@ -146,7 +146,6 @@ void loop()
 void toggleDelivery(){
  if(millis()-button_press > debounce_time) {
   running = !running;
-  Serial.println("external interrupt triggered");
   button_press = millis();
  }
 }
@@ -154,8 +153,6 @@ void toggleDelivery(){
 void toggleReset(){
   if(millis()-button_press > debounce_time) {
     reset = true;
-    delay(50);
-    Serial.println("external interrupt triggered");
     button_press = millis();
   }
 }
