@@ -33,10 +33,11 @@ LiquidCrystal lcd (12, 11, 10, 9, 8, 7);
 bool running = false;
 bool wasRunning = false;
 bool reset = false;
+bool spd_update = false;
 
 const double expected_spd = 0.10;
 //const double expected_spd = 0.06;
-const double error_margin = 0.005;
+const double error_margin = 0.03;
  
 double pwm_lvl = 30; //pwm level fed to the motor
 //double pwm_lvl = 2.78;
@@ -99,14 +100,22 @@ void loop()
 
     motor_speed = (double)step_diff/poll_int;
 
-    if(motor_speed < (expected_spd - error_margin)){
-      pwm_lvl++;
-      analogWrite(PWM, pwm_lvl);
+    if(spd_update){
+      if(motor_speed < (expected_spd - error_margin)){
+        pwm_lvl++;
+        analogWrite(PWM, pwm_lvl);
+        Serial.println(pwm_lvl);
+        Serial.println(motor_speed);
+      }
+      else if(motor_speed > expected_spd){
+        pwm_lvl--;
+        analogWrite(PWM, pwm_lvl);
+        Serial.println(pwm_lvl);
+        Serial.println(motor_speed);
+      }
+      spd_update = false;
     }
-    else if(motor_speed > (expected_spd + error_margin)){
-      pwm_lvl--;
-      analogWrite(PWM, pwm_lvl);
-    }
+
 
     elapsedTime = millis() - pausedTime;
     long countdowntime_seconds = countdown_time - (elapsedTime / 1000);
@@ -182,4 +191,5 @@ void TimerHandler1()
 {
   step_diff = enc_count - last_steps;
   last_steps = enc_count;
+  spd_update = true;
 }
