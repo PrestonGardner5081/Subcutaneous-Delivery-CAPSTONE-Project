@@ -11,7 +11,7 @@
 #include <LiquidCrystal.h>
 #include "megaAVR_TimerInterrupt.h"
 
-#define TIMER1_INTERVAL_MS        50L
+#define TIMER1_INTERVAL_MS        200L
 
 //define the two direction logic pins and the speed / PWM pin
 const int DIR_A = 5;
@@ -21,11 +21,12 @@ const int BUTTON_PIN = 13;
 const int ENC_PIN = 2;
 
 double motor_speed = 0; // measured motor speed steps/millisec (12 steps / input shaft rotation, 986.41 input shaft rotations / output shaft rotations)
+long poll_int = TIMER1_INTERVAL_MS/4;
 
 long enc_count = 0; //keeps track of the rotations of the motor
 
-long last_count = 0; //last checked motor position
-long last_check = 0;//last time motor pos was checked
+long last_steps = 0;  //set each time timer interrupt runs
+long step_diff = 0; //difference in steps from last steps recorded by interrupt
 
 LiquidCrystal lcd (12, 11, 10, 9, 8, 7);
 
@@ -33,6 +34,10 @@ bool running = false;
 bool wasRunning = false;
 bool reset = false;
 
+const double expected_spd = 0.10;
+//const double expected_spd = 0.06;
+const double error_margin = 0.005;
+ 
 double pwm_lvl = 30; //pwm level fed to the motor
 //double pwm_lvl = 2.78;
 //double pwm_lvl = 1.1; 
@@ -68,17 +73,18 @@ void setup()
   lcd.print("begin.");
   Serial.begin(9600);//initialize serial output for debugging FIXME
   attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), toggleDelivery, FALLING); //attach button interupt 
-  attachInterrupt(digitalPinToInterrupt(ENC_PIN), updateEncoder, FALLING); //attach button interupt 
+  attachInterrupt(digitalPinToInterrupt(ENC_PIN), updateEncoder, FALLING); //attach button interupt\
+  ITimer1.init();
+  if (ITimer1.attachInterruptInterval(TIMER1_INTERVAL_MS, TimerHandler1))
+    Serial.println("Starting  ITimer1 OK, millis() = " + String(millis()));
+  else
+    Serial.println("Can't set ITimer1. Select another freq. or timer"); 
 }
 
 void loop()
 {
  if(running){
     if(!wasRunning){
-      last_check = millis();
-      last_count = enc_count;
-      motor_speed = 0;
-
       digitalWrite(DIR_A, HIGH);
       digitalWrite(DIR_B, LOW);
       analogWrite(PWM, pwm_lvl);
@@ -90,17 +96,16 @@ void loop()
       running = true;
       wasRunning = true; 
     }
-    else{
-      long time = millis() - last_check;
-      long steps = enc_count - last_count;
-      if(steps > 0){ //only update motor speed if a rotation has happened
-        motor_speed = (double)steps/time;
-        last_count = enc_count;
-        last_check = millis();
-      }
 
-      // Serial.println(motor_speed, 6); //FIXME      
-      Serial.println(time);
+    motor_speed = (double)step_diff/poll_int;
+
+    if(motor_speed < (expected_spd - error_margin)){
+      pwm_lvl++;
+      analogWrite(PWM, pwm_lvl);
+    }
+    else if(motor_speed > (expected_spd + error_margin)){
+      pwm_lvl--;
+      analogWrite(PWM, pwm_lvl);
     }
 
     elapsedTime = millis() - pausedTime;
@@ -115,9 +120,6 @@ void loop()
       lcd.print("Complete, press");
       lcd.setCursor(0,1);
       lcd.print("button to reset");
-      while(!reset){
-        delay(10);
-      }
       setup();
     }
 
@@ -155,7 +157,6 @@ void loop()
     lcd.setCursor(0,1); 
     wasRunning = false;
   }
-  delay(10);
  }
 
 void toggleDelivery(){
@@ -179,5 +180,6 @@ void updateEncoder(){
   
 void TimerHandler1()
 {
-  // Doing something here inside ISR
+  step_diff = enc_count - last_steps;
+  last_steps = enc_count;
 }
