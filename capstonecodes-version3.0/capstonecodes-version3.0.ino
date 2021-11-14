@@ -35,9 +35,9 @@ bool wasRunning = false;
 bool reset = false;
 bool spd_update = false;
 
-const double expected_spd = 0.10;
+const double expected_spd = 0.20;
 //const double expected_spd = 0.06;
-const double error_margin = 0.03;
+const double error_margin = 0.025;
  
 double pwm_lvl = 30; //pwm level fed to the motor
 //double pwm_lvl = 2.78;
@@ -74,7 +74,7 @@ void setup()
   lcd.print("begin.");
   Serial.begin(9600);//initialize serial output for debugging FIXME
   attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), toggleDelivery, FALLING); //attach button interupt 
-  attachInterrupt(digitalPinToInterrupt(ENC_PIN), updateEncoder, FALLING); //attach button interupt\
+  attachInterrupt(digitalPinToInterrupt(ENC_PIN), updateEncoder, CHANGE); //attach encoder
   ITimer1.init();
   if (ITimer1.attachInterruptInterval(TIMER1_INTERVAL_MS, TimerHandler1))
     Serial.println("Starting  ITimer1 OK, millis() = " + String(millis()));
@@ -104,15 +104,14 @@ void loop()
       if(motor_speed < (expected_spd - error_margin)){
         pwm_lvl++;
         analogWrite(PWM, pwm_lvl);
-        Serial.println(pwm_lvl);
-        Serial.println(motor_speed);
+        Serial.println(pwm_lvl);//FIXME
       }
       else if(motor_speed > expected_spd){
         pwm_lvl--;
         analogWrite(PWM, pwm_lvl);
-        Serial.println(pwm_lvl);
-        Serial.println(motor_speed);
+        Serial.println(pwm_lvl);//FIXME
       }
+      Serial.println(motor_speed, 4);//FIXME
       spd_update = false;
     }
 
@@ -193,3 +192,4 @@ void TimerHandler1()
   last_steps = enc_count;
   spd_update = true;
 }
+
