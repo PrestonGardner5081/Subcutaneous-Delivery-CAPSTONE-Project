@@ -21,7 +21,7 @@ const int BUTTON_PIN = 13;
 const int ENC_PIN = 2;
 
 double motor_speed = 0; // measured motor speed steps/millisec (12 steps / input shaft rotation, 986.41 input shaft rotations / output shaft rotations)
-long poll_int = TIMER1_INTERVAL_MS/4;
+double poll_int = (double)TIMER1_INTERVAL_MS/4;
 
 long enc_count = 0; //keeps track of the rotations of the motor
 
@@ -35,17 +35,19 @@ bool wasRunning = false;
 bool reset = false;
 bool spd_update = false;
 
-const double expected_spd = 0.20;
-//const double expected_spd = 0.06;
-const double error_margin = 0.025;
+const double expected_spd = 0.3;
+//const double expected_spd = 0.12;
+//const double error_margin = 0.025;
  
-double pwm_lvl = 30; //pwm level fed to the motor
+double pwm_lvl = expected_spd * 80; //pwm level fed to the motor
 //double pwm_lvl = 2.78;
 //double pwm_lvl = 1.1; 
 unsigned long pausedTime = 0;
 unsigned long paused = 0;
 unsigned long elapsedTime = 0;
 String percentStr = String("0%");
+
+long start_time = 0;
 
 long button_press = -1;
 const long debounce_time = 250;
@@ -92,29 +94,11 @@ void loop()
       lcd.clear();
       lcd.print("|>");
       lcd.setCursor(0,1);
-      // lcd.print(percentStr);
+      start_time = millis();
       pausedTime += millis() - paused;
       running = true;
       wasRunning = true; 
     }
-
-    motor_speed = (double)step_diff/poll_int;
-
-    if(spd_update){
-      if(motor_speed < (expected_spd - error_margin)){
-        pwm_lvl++;
-        analogWrite(PWM, pwm_lvl);
-        Serial.println(pwm_lvl);//FIXME
-      }
-      else if(motor_speed > expected_spd){
-        pwm_lvl--;
-        analogWrite(PWM, pwm_lvl);
-        Serial.println(pwm_lvl);//FIXME
-      }
-      Serial.println(motor_speed, 4);//FIXME
-      spd_update = false;
-    }
-
 
     elapsedTime = millis() - pausedTime;
     long countdowntime_seconds = countdown_time - (elapsedTime / 1000);
@@ -151,6 +135,27 @@ void loop()
         }
       lcd.print(countdown_sec);
     } 
+
+    if(millis() - start_time > 500){ //keeps motor speed from spiking at start
+      motor_speed = (double)step_diff/poll_int;
+      if(spd_update){
+        if(motor_speed < expected_spd){
+          pwm_lvl += (expected_spd - motor_speed)*10;
+          analogWrite(PWM, pwm_lvl);
+          //Serial.println(pwm_lvl);//FIXME
+        }
+        else if(motor_speed > expected_spd){
+          pwm_lvl -= (motor_speed - expected_spd)*10;
+          if(pwm_lvl < 0)
+          pwm_lvl = 20;
+          analogWrite(PWM, pwm_lvl);
+          //Serial.println(pwm_lvl);//FIXME
+        }
+        //Serial.println(motor_speed, 4);//FIXME
+        Serial.println(enc_count);//FIXME
+        spd_update = false;
+      } 
+    }
   }
   else if(!running && wasRunning){
     //drive forward at full speed by pulling DIR_A High
@@ -192,4 +197,3 @@ void TimerHandler1()
   last_steps = enc_count;
   spd_update = true;
 }
-

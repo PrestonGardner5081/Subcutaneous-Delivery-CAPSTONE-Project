@@ -25,7 +25,7 @@ bool wasRunning = false;
 bool reset = false;
 int count = 0;
 int save = 0;
-double motorSpeed = 25;
+double motorSpeed = 40;
 //double motorSpeed = 2.78;
 //double motorSpeed = 1.1; 
 unsigned long pausedTime = 0;
@@ -64,9 +64,9 @@ void setup()
 
 void loop()
 {
-  elapsedTime = millis() - pausedTime;
-  long countdowntime_seconds = countdown_time - (elapsedTime / 1000);
  if(running){
+    elapsedTime = millis() - pausedTime;
+    long countdowntime_seconds = countdown_time - (elapsedTime / 1000);
     if(!wasRunning){
       //drive forward at full speed by pulling DIR_A High
       //and DIR_B low, while writing a full 255 to PWM to 
