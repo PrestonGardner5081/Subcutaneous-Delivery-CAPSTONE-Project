@@ -19,6 +19,7 @@ const int DIR_B = 4;
 const int PWM = 6;
 const int BUTTON_PIN = 13;
 const int ENC_PIN = 2;
+const bool diagnotstics = true;
 
 double motor_speed = 0; // measured motor speed steps/millisec (12 steps / input shaft rotation, 986.41 input shaft rotations / output shaft rotations)
 double poll_int = (double)TIMER1_INTERVAL_MS/4;
@@ -35,9 +36,9 @@ bool wasRunning = false;
 bool reset = false;
 bool spd_update = false;
 
-const double expected_spd = 0.3;
-//const double expected_spd = 0.12;
-//const double error_margin = 0.025;
+const double expected_spd = 3;
+//const double expected_spd = 0.3;
+
  
 double pwm_lvl = expected_spd * 80; //pwm level fed to the motor
 //double pwm_lvl = 2.78;
@@ -142,17 +143,17 @@ void loop()
         if(motor_speed < expected_spd){
           pwm_lvl += (expected_spd - motor_speed)*10;
           analogWrite(PWM, pwm_lvl);
-          //Serial.println(pwm_lvl);//FIXME
+          Serial.println(pwm_lvl);//FIXME
         }
         else if(motor_speed > expected_spd){
           pwm_lvl -= (motor_speed - expected_spd)*10;
           if(pwm_lvl < 0)
-          pwm_lvl = 20;
+            pwm_lvl = 20;
           analogWrite(PWM, pwm_lvl);
-          //Serial.println(pwm_lvl);//FIXME
+          Serial.println(pwm_lvl);//FIXME
         }
-        //Serial.println(motor_speed, 4);//FIXME
-        Serial.println(enc_count);//FIXME
+        Serial.println(motor_speed, 4);//FIXME
+        //Serial.println(enc_count);//FIXME
         spd_update = false;
       } 
     }
@@ -168,6 +169,7 @@ void loop()
     lcd.clear();
     lcd.print("|| Press button");
     lcd.setCursor(0,1); 
+    lcd.print("to continue    ");
     wasRunning = false;
   }
  }
